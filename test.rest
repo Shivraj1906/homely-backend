@@ -1,0 +1,25 @@
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "test@gmail.com",
+    "password": "12345678"
+}
+
+###
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "email": "test@gmail.com",
+    "password": "12345678"
+}
+
+###
+
+GET http://localhost:3000/
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZ21haWwuY29tIiwiaWF0IjoxNjQwNDQ1MTc4fQ.edbcUbY5gs3K-bvaz5vfm0iBiRi5p3yzjEHtrBMOWcQ
+
