@@ -3,11 +3,24 @@ const express = require('express');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer')
+const path = require('path')
 
 //create a new express app
 const app = express();
 
 app.use(express.json());
+
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        callback(null, 'profile')
+    },
+    filename: (req, file, callback) => {
+        callback(null, file.originalname + path.extname(file.originalname));
+    }
+})
+
+const upload = multer({storage: storage});
 
 //create sql connection
 const sql = mysql.createConnection({
@@ -89,6 +102,10 @@ app.post('/register', (req, res) => {
         });
     });
 });
+
+app.post("/profileUpload", upload.single("image"), (req, res) => {
+    res.send("Uploaded");
+})
 
 //manage /login post route
 app.post('/login', (req, res) => {
