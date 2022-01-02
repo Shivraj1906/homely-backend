@@ -152,6 +152,49 @@ app.post('/login', (req, res) => {
     });
 });
 
+app.post("/changePassword", verifyToken, (req, res) => {
+    const {password, newPassword} = req.body;
+
+    jwt.verify(req.token, "secret", (err, authData) => {
+        if(err) {
+            return res.status(500).send(err);
+        }
+
+        const { email } = authData;
+
+        sql.query(`SELECT * FROM users WHERE email = '${email}'`, (err, result) => {
+            if(err) {
+                return res.status(500).send("internal server error");
+            }
+
+            bcrypt.compare(password, result[0].password, (err, isMatch) => {
+                if(err) {
+                    return res.status(500).send("Server error");
+                }
+
+                if(!isMatch) {
+                    return res.send(400).send("Incorrect password")
+                }
+
+                bcrypt.hash(newPassword, 10, (err, hash) => {
+                    if(err) {
+                        return res.status(500).send("Server error")
+                    }
+
+                    sql.query(`UPDATE users SET password = '${hash}' WHERE email = '${email}'`, (err, result) => {
+                        if(err) {
+                            return res.send(500).send("Server error")
+                        }
+
+                        return res.status(200).send(result);
+                    })
+                })
+            }) 
+        })
+        
+    });
+})
+
 
 //listen at port 3000
 app.listen(3000, () => {
