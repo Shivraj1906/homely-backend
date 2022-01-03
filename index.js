@@ -3,11 +3,24 @@ const express = require('express');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer')
+const path = require('path')
 
 //create a new express app
 const app = express();
 
 app.use(express.json());
+
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        callback(null, 'profile')
+    },
+    filename: (req, file, callback) => {
+        callback(null, file.originalname + path.extname(file.originalname));
+    }
+})
+
+const upload = multer({storage: storage});
 
 //create sql connection
 const sql = mysql.createConnection({
@@ -90,6 +103,10 @@ app.post('/register', (req, res) => {
     });
 });
 
+app.post("/profileUpload", upload.single("image"), (req, res) => {
+    res.send("Uploaded");
+})
+
 //manage /login post route
 app.post('/login', (req, res) => {
     //get email and password from the body
@@ -134,6 +151,49 @@ app.post('/login', (req, res) => {
         });
     });
 });
+
+app.post("/changePassword", verifyToken, (req, res) => {
+    const {password, newPassword} = req.body;
+
+    jwt.verify(req.token, "secret", (err, authData) => {
+        if(err) {
+            return res.status(500).send(err);
+        }
+
+        const { email } = authData;
+
+        sql.query(`SELECT * FROM users WHERE email = '${email}'`, (err, result) => {
+            if(err) {
+                return res.status(500).send("internal server error");
+            }
+
+            bcrypt.compare(password, result[0].password, (err, isMatch) => {
+                if(err) {
+                    return res.status(500).send("Server error");
+                }
+
+                if(!isMatch) {
+                    return res.send(400).send("Incorrect password")
+                }
+
+                bcrypt.hash(newPassword, 10, (err, hash) => {
+                    if(err) {
+                        return res.status(500).send("Server error")
+                    }
+
+                    sql.query(`UPDATE users SET password = '${hash}' WHERE email = '${email}'`, (err, result) => {
+                        if(err) {
+                            return res.send(500).send("Server error")
+                        }
+
+                        return res.status(200).send(result);
+                    })
+                })
+            }) 
+        })
+        
+    });
+})
 
 
 //listen at port 3000
