@@ -28,7 +28,7 @@ const upload = multer({ storage: storage });
 const sql = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'p@ssword',
+    // password: '',
     database: 'project'
 });
 
@@ -169,14 +169,19 @@ app.post("/changePassword", verifyToken, (req, res) => {
                 return res.status(500).send("internal server error");
             }
 
+
             bcrypt.compare(password, result[0].password, (err, isMatch) => {
                 if (err) {
                     return res.status(500).send("Server error");
                 }
 
                 if (!isMatch) {
-                    return res.send(400).send("Incorrect password")
+
+                    return res.status(400).send("Incorrect current password")
                 }
+
+
+
 
                 bcrypt.hash(newPassword, 10, (err, hash) => {
                     if (err) {
@@ -185,10 +190,10 @@ app.post("/changePassword", verifyToken, (req, res) => {
 
                     sql.query(`UPDATE users SET password = '${hash}' WHERE email = '${email}'`, (err, result) => {
                         if (err) {
-                            return res.send(500).send("Server error")
+                            return res.status(500).send("Server error")
                         }
 
-                        return res.status(200).send(result);
+                        return res.status(200).send("Password changed successfully");
                     })
                 })
             })
