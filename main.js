@@ -108,9 +108,8 @@ app.get('/getHomeData', verifyToken, (req, res) => {
         }
 
         const email = authData.email;
-
         //get the place data from 'place' table
-        db.query('SELECT * FROM place', (err, results) => {
+        db.query('SELECT * FROM place WHERE is_listed = 1', (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
@@ -119,6 +118,40 @@ app.get('/getHomeData', verifyToken, (req, res) => {
 
             //send back results
             res.status(200).json(results);
+        });
+    });
+});
+
+//manage get hostPlaceData request
+app.get('/getHostPlaceData', verifyToken, (req, res) => {
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        const email = authData.email;
+
+        //get host_id from 'users' table where email = email
+        db.query('SELECT user_id FROM users WHERE email = ?', [email], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            console.log(results[0].user_id);
+
+            //return all places where host_id = results[0].user_id
+            db.query('SELECT * FROM place WHERE host_id = ?', [results[0].user_id], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                //send back results
+                res.status(200).json(results);
+            });
         });
     });
 });
@@ -203,19 +236,12 @@ app.get("/getPlaceImage", verifyToken, (req, res) => {
     });
 })
 
-app.get("/getUserProfileImage", verifyToken, (req, res) => {
-    //verify token
-    jwt.verify(req.token, 'secret', (err, authData) => {
-        if (err) {
-            res.sendStatus(403);
-        }
+app.get("/getUserProfileImage", (req, res) => {
+    //get the email from query params
+    const email = req.query.email;
 
-        //get the email from query params
-        const email = req.query.email;
-
-        //send back file named 'place_id.jpg'
-        res.sendFile(path.join(__dirname, './profile/' + email + '.png'));
-    });
+    //send back file named 'place_id.jpg'
+    res.sendFile(path.join(__dirname, './profile/' + email + '.png'));
 })
 
 //manage post request that manages the booking request
@@ -369,6 +395,56 @@ app.get('/getPlaceData', verifyToken, (req, res) => {
 
             //send back place data and 200 okay request
             res.status(200).json(results[0]);
+        });
+    });
+});
+
+//manage change is_listed status
+app.post('/changeIsListed', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get place_id and status from request body
+        const { place_id } = req.body;
+        const { status } = req.body;
+
+        console.log(status);
+
+        //update is_listed status where place_id = place_id
+        db.query('UPDATE place SET is_listed = ? WHERE place_id = ?', [status, place_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back 200 okay request
+            res.status(200).send();
+        });
+    });
+});
+
+//manage get request that send back all services from 'service' table
+app.get('/getServices', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get all services from 'service' table
+        db.query('SELECT * FROM service', (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back all services and 200 okay request
+            res.status(200).json(results);
         });
     });
 });
