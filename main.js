@@ -3,17 +3,22 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql');
 const path = require('path');
+const pdf = require('pdf-creator-node');
+const fs = require('fs');
 
 //use json middleware
 const app = express();
 
+app.use(express.static('public')); 
+app.use('/docs', express.static('docs'))
+app.use(express.json());
 app.use(express.json());
 
 //create connection to database
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'p@ssword',
+    password: '',
     database: 'project'
 });
 
@@ -448,6 +453,67 @@ app.get('/getServices', verifyToken, (req, res) => {
         });
     });
 });
+
+//generate invoice 
+app.get('/invoice', verifyToken, (req, res) => {
+
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+        const html = fs.readFileSync(path.join(__dirname, '../auth/views/invoiceTemplate.html'), 'utf-8');
+        const filename = Math.random()+ '.pdf';
+
+        const document = {
+            html: html,
+            data:{},
+            path: './docs/' + filename
+        }
+        pdf.create(document, {
+            formate: 'A4',
+            orientation: 'portrait',
+        })
+            .then(respo => {
+                res.status(200).send(filename);
+                
+            }).catch(error => {
+                console.log(error);
+                res.sendStatus(403);
+            });
+    });
+});
+
+//generate report 
+app.get('/report', verifyToken, (req, res) => {
+
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+        const html = fs.readFileSync(path.join(__dirname, '../auth/views/reportTemplate.html'), 'utf-8');
+        const filename = Math.random()+ '.pdf';
+
+        const document = {
+            html: html,
+            data:{},
+            path: './docs/' + filename
+        }
+        pdf.create(document, {
+            formate: 'A4',
+            orientation: 'portrait',
+        })
+            .then(respo => {
+                res.status(200).send(filename);
+                
+            }).catch(error => {
+                console.log(error);
+                res.sendStatus(403);
+            });
+    });
+});
+
 
 //listen at port 5000
 app.listen(5000, () => console.log('Server started at port 5000'));
