@@ -5,20 +5,33 @@ const mysql = require('mysql');
 const path = require('path');
 const pdf = require('pdf-creator-node');
 const fs = require('fs');
+const multer = require('multer');
+const res = require('express/lib/response');
 
 //use json middleware
 const app = express();
 
-app.use(express.static('public')); 
+app.use(express.static('public'));
 app.use('/docs', express.static('docs'))
 app.use(express.json());
-app.use(express.json());
+
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        callback(null, 'place')
+    },
+    filename: (req, file, callback) => {
+        // callback(null, file.originalname + path.extname(file.originalname));
+        callback(null, file.originalname);
+    }
+})
+
+const upload = multer({ storage: storage });
 
 //create connection to database
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'p@ssword',
     database: 'project'
 });
 
@@ -463,11 +476,11 @@ app.get('/invoice', verifyToken, (req, res) => {
             res.sendStatus(403);
         }
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/invoiceTemplate.html'), 'utf-8');
-        const filename = Math.random()+ '.pdf';
+        const filename = Math.random() + '.pdf';
 
         const document = {
             html: html,
-            data:{},
+            data: {},
             path: './docs/' + filename
         }
         pdf.create(document, {
@@ -476,7 +489,7 @@ app.get('/invoice', verifyToken, (req, res) => {
         })
             .then(respo => {
                 res.status(200).send(filename);
-                
+
             }).catch(error => {
                 console.log(error);
                 res.sendStatus(403);
@@ -493,11 +506,11 @@ app.get('/report', verifyToken, (req, res) => {
             res.sendStatus(403);
         }
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/reportTemplate.html'), 'utf-8');
-        const filename = Math.random()+ '.pdf';
+        const filename = Math.random() + '.pdf';
 
         const document = {
             html: html,
-            data:{},
+            data: {},
             path: './docs/' + filename
         }
         pdf.create(document, {
@@ -506,7 +519,7 @@ app.get('/report', verifyToken, (req, res) => {
         })
             .then(respo => {
                 res.status(200).send(filename);
-                
+
             }).catch(error => {
                 console.log(error);
                 res.sendStatus(403);
@@ -514,6 +527,82 @@ app.get('/report', verifyToken, (req, res) => {
     });
 });
 
+//manage post request that inserts place data
+app.post('/insertPlace', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get email from authData
+        const email = authData.email;
+
+        //get host_id from email
+        db.query('SELECT user_id FROM users WHERE email = ?', [email], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //store host_id in host_id variable
+            const host_id = results[0].user_id;
+
+            //get place data from request body
+            const { name, type, address, city, state, pincode, max_guest, bed_count, bathroom_count, price, starting_date, last_date, average_star, is_listed, description, image_count, bedroom_count } = req.body;
+
+            //insert place data into 'place' table
+            db.query('INSERT INTO place (host_id, name, type, address, city, state, pincode, max_guest, bed_count, bedroom_count, bathroom_count, price, starting_date, last_date, average_star, is_listed, description, image_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [host_id, name, type, address, city, state, pincode, max_guest, bed_count, bedroom_count, bathroom_count, price, starting_date, last_date, average_star, is_listed, description, image_count], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                //send back insertId and 200 okay request
+                res.status(200).json({ insertId: results.insertId });
+            });
+        });
+    });
+});
+
+//manage insertProvidedService post request
+app.post('/insertProvidedService', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get the place_id from request
+        const { place_id } = req.body;
+
+        //get selectedServices from request
+        const { serviceIds, servicePrice } = req.body;
+        const average_star = 0;
+
+        //loop throught serviceIds and insert into 'provided_service' table
+        for (let i = 0; i < serviceIds.length; i++) {
+            db.query('INSERT INTO service_provided (place_id, service_id, price, average_star) VALUES (?, ?, ?, ? )', [place_id, serviceIds[i], servicePrice[i], average_star], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+            });
+        }
+
+        //send back 200 okay request
+        res.status(200).send();
+    });
+});
+
+//manage uploadPlaceImage post request
+app.post('/uploadPlaceImage', upload.single("image"), (req, res) => {
+    //send back 200 okay request
+    res.status(200).send();
+});
 
 //listen at port 5000
 app.listen(5000, () => console.log('Server started at port 5000'));
