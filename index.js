@@ -71,7 +71,7 @@ app.get('/', verifyToken, (req, res) => {
 //manage /register post route
 app.post('/register', (req, res) => {
     //get first_name, last_name, email and password from request body
-    const { first_name, last_name, email, password } = req.body;
+    const { first_name, last_name, email, password, token } = req.body;
 
     //check if email is already in use
     sql.query('SELECT * FROM users WHERE email = ?', [email], (err, result) => {
@@ -91,7 +91,7 @@ app.post('/register', (req, res) => {
                 res.status(500).send('Internal server error');
             }
             //insert user into database
-            sql.query('INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)', [first_name, last_name, email, hash], (err, result) => {
+            sql.query('INSERT INTO users (first_name, last_name, email, password, token) VALUES (?, ?, ?, ?, ?)', [first_name, last_name, email, hash], (err, result) => {
                 if (err) {
                     console.log(err);
                     res.status(500).send('Internal server error');
