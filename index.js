@@ -91,7 +91,7 @@ app.post('/register', (req, res) => {
                 res.status(500).send('Internal server error');
             }
             //insert user into database
-            sql.query('INSERT INTO users (first_name, last_name, email, password, token) VALUES (?, ?, ?, ?, ?)', [first_name, last_name, email, hash], (err, result) => {
+            sql.query('INSERT INTO users (first_name, last_name, email, password, token) VALUES (?, ?, ?, ?, ?)', [first_name, last_name, email, hash, token], (err, result) => {
                 if (err) {
                     console.log(err);
                     res.status(500).send('Internal server error');
