@@ -25,13 +25,24 @@ const storage = multer.diskStorage({
     }
 })
 
+
+const profileStorage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        callback(null, 'profile')
+    },
+    filename: (req, file, callback) => {
+        // callback(null, file.originalname + path.extname(file.originalname));
+        callback(null, file.originalname);
+    }
+})
 const upload = multer({ storage: storage });
+const profileUpload = multer({ storage: profileStorage });
 
 //create connection to database
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'p@ssword',
+    password: '',
     database: 'project'
 });
 
@@ -258,9 +269,15 @@ app.get("/getUserProfileImage", (req, res) => {
     //get the email from query params
     const email = req.query.email;
 
-    //send back file named 'place_id.jpg'
+    //send back file named 'email.jpg'
     res.sendFile(path.join(__dirname, './profile/' + email + '.png'));
 })
+
+//manage uploadProfileImage post request
+app.post('/uploadProfileImage', profileUpload.single("image"), (req, res) => {
+    //send back 200 okay request
+    res.status(200).send();
+});
 
 //manage post request that manages the booking request
 app.post('/bookingRequest', verifyToken, (req, res) => {
@@ -603,6 +620,8 @@ app.post('/uploadPlaceImage', upload.single("image"), (req, res) => {
     //send back 200 okay request
     res.status(200).send();
 });
+
+
 
 //listen at port 5000
 app.listen(5000, () => console.log('Server started at port 5000'));
