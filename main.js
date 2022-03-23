@@ -42,7 +42,7 @@ const profileUpload = multer({ storage: profileStorage });
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'p@ssword',
     database: 'project'
 });
 
@@ -79,6 +79,41 @@ app.get('/getUserData', verifyToken, (req, res) => {
 
         //query database
         db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back user data
+            res.status(200).json({
+                email: results[0].email,
+                first_name: results[0].first_name,
+                last_name: results[0].last_name,
+                birthdate: results[0].birthdate,
+                gender: results[0].gender,
+                address: results[0].address,
+                city: results[0].city,
+                state: results[0].state,
+                pincode: results[0].pincode,
+                phone_number: results[0].phone_number,
+            });
+        });
+    });
+});
+
+//manage getUserDataWithId request
+app.get('/getUserDataWithId', verifyToken, (req, res) => {
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get user_id from request
+        const user_id = req.query.user_id;
+
+        //query database
+        db.query('SELECT * FROM users WHERE user_id = ?', [user_id], (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
@@ -222,6 +257,31 @@ app.get('/getProvidedServices', verifyToken, (req, res) => {
     });
 });
 
+//manage get request that returns chosen service for given booking
+app.get('/getChosenService', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get booking_id from query params
+        const booking_id = req.query.booking_id;
+
+        //get all services from 'service' table which is in service_provided table where booking_id = booking_id
+        db.query('SELECT * FROM service WHERE service_id IN (SELECT service_id FROM service_chosen WHERE booking_id = ?)', [booking_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back results
+            res.status(200).json(results);
+        });
+    });
+});
+
 app.get('/getHostData', verifyToken, (req, res) => {
     jwt.verify(req.token, 'secret', (err, authData) => {
         if (err) {
@@ -245,7 +305,7 @@ app.get('/getHostData', verifyToken, (req, res) => {
                 last_name: results[0].last_name,
                 phone_number: results[0].phone_number,
                 email: results[0].email,
-                token : results[0].token
+                token: results[0].token
             });
         });
     });
@@ -266,7 +326,24 @@ app.get("/getUserProfileImage", (req, res) => {
 
     //send back file named 'email.jpg'
     res.sendFile(path.join(__dirname, './profile/' + email + '.png'));
-})
+});
+
+app.get("/getUserProfileImageWithId", (req, res) => {
+    //get user_id from query params
+    const user_id = req.query.user_id;
+
+    //find email for this user_id
+    db.query("SELECT email FROM users WHERE user_id = ?", [user_id], (err, results) => {
+        if (err) {
+            //log error and send back 500 server error
+            console.log(err);
+            return res.status(500).send('Internal Server Error');
+        }
+
+        //send back file named 'email.jpg'
+        res.sendFile(path.join(__dirname, './profile/' + results[0]['email'] + '.png'));
+    });
+});
 
 //manage uploadProfileImage post request
 app.post('/uploadProfileImage', profileUpload.single("image"), (req, res) => {
@@ -414,6 +491,7 @@ app.get('/getPlaceData', verifyToken, (req, res) => {
 
         //get place_id from query params
         const place_id = req.query.place_id;
+        console.log(place_id);
 
         //get place data where place_id = place_id
         db.query('SELECT * FROM place WHERE place_id = ?', [place_id], (err, results) => {
@@ -695,7 +773,7 @@ app.get('/getPendingBooking', verifyToken, (req, res) => {
         const { email } = authData;
 
         //find user_id from 'user' table where email = email
-        db.query('SELECT user_id FROM user WHERE email = ?', [email], (err, results) => {
+        db.query('SELECT user_id FROM users WHERE email = ?', [email], (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
@@ -703,7 +781,7 @@ app.get('/getPendingBooking', verifyToken, (req, res) => {
             }
 
             //return data from 'booking' table where user_id = user_id and status = 'p'
-            db.query('SELECT * FROM booking WHERE user_id = ? AND status = ?', [results[0].user_id, 'p'], (err, results) => {
+            db.query('SELECT * FROM booking WHERE traveler_id = ? AND status = ?', [results[0].user_id, 'p'], (err, results) => {
                 if (err) {
                     //log error and send back 500 server error
                     console.log(err);
