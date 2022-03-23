@@ -341,23 +341,23 @@
 		
 			<div class="client left ">
 				<p style="margin-bottom: 7px;" >INVOICE FROM:</p>
-				<p class="name" style="margin-bottom: 4px;">Karma Patel</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">6352411412</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;"> <a href="mailto:kp@example.com">kp@example.com</a></p>
+				<p class="name" style="margin-bottom: 4px;">{{this.fname}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;">>{{this.fph}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.femail}}</p>
 			</div>
 		  <div class="client left " >
 				<p  style="margin-bottom: 7px;">INVOICE TO:</p>
-				<p class="name" style="margin-bottom: 4px;">Karma Patel</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">6352411412</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;"> <a href="mailto:kp@example.com">kp@example.com</a></p>
+				<p class="name" style="margin-bottom: 4px;">{{this.tname}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.tph}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.temail}}</p>
 					
       </div>
 		  <div class="data right">
 			  <div class="title">Invoice </div>
 			  <div class="date" >
-				<p style="margin-bottom: 2px;font-size: 16px">Invoice Number:<strong> #A001 </strong>				</p>
-				<p style="margin-bottom: 2px;font-size: 16px">Date of Invoice:<strong> 01-06-2014</strong>			  </p>
-				<p style="font-size: 16px">Transaction Id : <strong> 20223205658710</strong>	</p>
+				<p style="margin-bottom: 2px;font-size: 16px">Invoice Number:<strong> #{{this.in}} </strong>				</p>
+				<p style="margin-bottom: 2px;font-size: 16px">Date of Invoice:<strong> {{this.doi}}</strong>			  </p>
+				<p style="font-size: 16px">Transaction Id : <strong> {{this.tid}}</strong>	</p>
 	        </div>
 		  </div>
 		</div>
@@ -373,29 +373,29 @@
 					</tbody>
 					<tbody class="body">
 						<tr>
-							<td class="no">01</td>
+							<td class="no">1</td>
 							<td class="desc">Place Name</td>
-							<td class="qty">Van-Vagdo</td>
+							<td class="qty">{{this.placeName}}</td>
 						</tr>
 						<tr>
-							<td class="no">02</td>
+							<td class="no">2</td>
 							<td class="desc">Type</td>
-							<td class="qty">Farn-House</td>
+							<td class="qty">{{this.type}}</td>
 						</tr>
 						<tr>
-							<td class="no">03</td>
+							<td class="no">3</td>
 							<td class="desc">Check-In Date</td>
-							<td class="qty">12-10-2525</td>
+							<td class="qty">{{this.cin}}</td>
 						</tr>
 						<tr>
-							<td class="no">04</td>
+							<td class="no">4</td>
 							<td class="desc">Check-Out Date</td>
-							<td class="qty">16-10-2525</td>
+							<td class="qty">{{this.cout}}</td>
 						</tr>
 						<tr>
-							<td class="no">05</td>
+							<td class="no">5</td>
 							<td class="desc">Number of Persons</td>
-							<td class="qty">16</td>
+							<td class="qty">{{this.nps}}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -410,26 +410,17 @@
 							<th class="qty"><div>Price</div></th>
 						</tr>
 					</tbody>
+				
 					<tbody class="body">
+						{{#each this.iData}}
 						<tr>
-							<td class="no">01</td>
-							<td class="desc">Rent</td>
-							<td class="qty">5</td>
-							<td class="qty">&#8377;  15000.00</td>
+							<td class="no">{{getIndex @index}}</td>
+							<td class="desc">{{this.desc}}</td>
+							<td class="qty">{{this.days}}</td>
+							<td class="qty">&#8377; {{this.price}}</td>
 						</tr>
-						<tr>
-							<td class="no">02</td>
-							<td class="desc">Bike</td>
-							<td class="qty">5</td>
-							<td class="qty"><strong>&#8377;  500.00</strong></td>
-						</tr>
-						<tr>
-							<td class="no">03</td>
-							<td class="desc">Gym</td>
-							<td class="qty">5</td>
-							<td class="qty"><strong>&#8377;   50.00</strong></td>
-						</tr>
-						
+						{{totalInvoice this.price }}
+						{{/each}}
 						
 					</tbody>
 				</table>
@@ -443,7 +434,7 @@
 							<td class="desc"></td>
 							<td class="qty"></td>
 							<td class="unit" style="fontsize: 16px"><strong>GRAND TOTAL</strong></td>
-							<td class="total" style="font-size: 16px;text-align: right;">	<strong>&#8377; 6500.00</strong></td>
+							<td class="total" style="font-size: 16px;text-align: right;">	<strong>&#8377; {{totalInvoice -1 }}</strong></td>
 						</tr>
 						
 					</tbody>
