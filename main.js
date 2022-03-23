@@ -446,7 +446,7 @@ app.get('/getPlaceData', verifyToken, (req, res) => {
                 console.log(err);
                 return res.status(500).send('Internal Server Error');
             }
-
+ 
             //send back place data and 200 okay request
             res.status(200).json(results[0]);
         });
@@ -502,10 +502,6 @@ app.get('/getServices', verifyToken, (req, res) => {
         });
     });
 });
-
-
-
-
 
 //generate invoice 
 app.get('/invoice', verifyToken, (req, res) => {
