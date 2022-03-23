@@ -245,6 +245,7 @@ app.get('/getHostData', verifyToken, (req, res) => {
                 last_name: results[0].last_name,
                 phone_number: results[0].phone_number,
                 email: results[0].email,
+                token : results[0].token
             });
         });
     });
