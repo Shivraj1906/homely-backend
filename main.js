@@ -239,20 +239,14 @@ app.get('/getHostData', verifyToken, (req, res) => {
     });
 });
 
-app.get("/getPlaceImage", verifyToken, (req, res) => {
-    //verify token
-    jwt.verify(req.token, 'secret', (err, authData) => {
-        if (err) {
-            res.sendStatus(403);
-        }
+app.get("/getPlaceImage", (req, res) => {
 
-        //get filename from query params
-        const filename = req.query.filename;
+    //get filename from query params
+    const filename = req.query.filename;
 
-        //send back file named 'place_id.jpg'
-        res.sendFile(path.join(__dirname, './place/' + filename + '.jpg'));
-    });
-})
+    //send back file named 'place_id.jpg'
+    res.sendFile(path.join(__dirname, './place/' + filename + '.jpg'));
+});
 
 app.get("/getUserProfileImage", (req, res) => {
     //get the email from query params
@@ -602,6 +596,107 @@ app.post('/insertProvidedService', verifyToken, (req, res) => {
 app.post('/uploadPlaceImage', upload.single("image"), (req, res) => {
     //send back 200 okay request
     res.status(200).send();
+});
+
+//manage post request to update place data
+app.post('/updatePlace', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+
+        //get place_id from request
+        const { place_id } = req.body;
+
+        //get place data from request body
+        const { name, type, address, city, state, pincode, max_guest, bed_count, bathroom_count, price, starting_date, last_date, average_star, is_listed, description, image_count, bedroom_count } = req.body;
+
+        console.log(place_id);
+        //update place data into 'place' table where place_id = place_id
+        db.query('UPDATE place SET name = ?, type = ?, address = ?, city = ?, state = ?, pincode = ?, max_guest = ?, bed_count = ?, bedroom_count = ?, bathroom_count = ?, price = ?, starting_date = ?, last_date = ?, average_star = ?, is_listed = ?, description = ?, image_count = ? WHERE place_id = ?', [name, type, address, city, state, pincode, max_guest, bed_count, bedroom_count, bathroom_count, price, starting_date, last_date, average_star, is_listed, description, image_count, place_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back 200 okay request
+            res.status(200).send();
+        });
+    });
+});
+
+//manage post request to update provided service data
+app.post('/updateProvidedService', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get place_id from request
+        const { place_id } = req.body;
+        const { serviceIds, servicePrice } = req.body;
+        const average_star = 0;
+
+        //delete all services from 'provided_service' table where place_id = place_id
+        db.query('DELETE FROM service_provided WHERE place_id = ?', [place_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            for (let i = 0; i < serviceIds.length; i++) {
+                db.query('INSERT INTO service_provided (place_id, service_id, price, average_star) VALUES (?, ?, ?, ? )', [place_id, serviceIds[i], servicePrice[i], average_star], (err, results) => {
+                    if (err) {
+                        //log error and send back 500 server error
+                        console.log(err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+                });
+            }
+
+            //send back 200 okay request
+            res.status(200).send();
+        });
+    });
+});
+
+//manage get request to get booking data
+app.get('/getPendingBooking', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get email from authData
+        const { email } = authData;
+
+        //find user_id from 'user' table where email = email
+        db.query('SELECT user_id FROM user WHERE email = ?', [email], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //return data from 'booking' table where user_id = user_id and status = 'p'
+            db.query('SELECT * FROM booking WHERE user_id = ? AND status = ?', [results[0].user_id, 'p'], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                //send back results and 200 okay request
+                res.status(200).json(results);
+            });
+        });
+    });
 });
 
 //listen at port 5000
