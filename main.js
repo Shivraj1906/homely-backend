@@ -6,14 +6,38 @@ const path = require('path');
 const pdf = require('pdf-creator-node');
 const fs = require('fs');
 const multer = require('multer');
-const res = require('express/lib/response');
-
-//use json middleware
 const app = express();
+
+totalInvoice = 0;
+totalAmount = 0;
 
 app.use(express.static('public'));
 app.use('/docs', express.static('docs'))
 app.use(express.json());
+app.set('views', __dirname + '/views/');
+app.set('view engine', 'handlebars');
+var hbs = require('handlebars');
+
+hbs.registerHelper("getIndex", function (value) {
+    return parseInt(value) + 1;
+});
+
+hbs.registerHelper("totalInvoice", function (value) {
+    if (parseInt(value) == -1) {
+        return totalInvoice;
+    } else {
+        totalInvoice += parseInt(value)
+    }
+});
+
+hbs.registerHelper("totalAmount", function (value) {
+    if (parseInt(value) == -1) {
+        return totalAmount;
+    } else {
+        totalAmount += parseInt(value)
+    }
+});
+
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
@@ -245,7 +269,7 @@ app.get('/getHostData', verifyToken, (req, res) => {
                 last_name: results[0].last_name,
                 phone_number: results[0].phone_number,
                 email: results[0].email,
-                token : results[0].token
+                token: results[0].token
             });
         });
     });
@@ -479,9 +503,13 @@ app.get('/getServices', verifyToken, (req, res) => {
     });
 });
 
+
+
+
+
 //generate invoice 
 app.get('/invoice', verifyToken, (req, res) => {
-
+    totalInvoice = 0;
     //verify token
     jwt.verify(req.token, 'secret', (err, authData) => {
         if (err) {
@@ -492,7 +520,18 @@ app.get('/invoice', verifyToken, (req, res) => {
 
         const document = {
             html: html,
-            data: {},
+            data: {
+                in: "A001", tid: "s3435564534534", doi: "2020-30-30",
+                placeName: "Van-vagdo", type: "Farm-House", cin: "2020-30-30", cout: "2020-30-30", nps: "6", iData: [{
+                    desc: "Rent",
+                    days: "5",
+                    price: "5000"
+                }, {
+                    desc: "Bike",
+                    days: "4",
+                    price: "500"
+                },], tname: "ds", tph: "6352411412", temail: "dx@gmail.com", fname: "ds", fph: "6352411412", femail: "dx@gmail.com"
+            },
             path: './docs/' + filename
         }
         pdf.create(document, {
@@ -512,19 +551,54 @@ app.get('/invoice', verifyToken, (req, res) => {
 //generate report 
 app.get('/report', verifyToken, (req, res) => {
 
+    totalAmount = 0;
     //verify token
     jwt.verify(req.token, 'secret', (err, authData) => {
         if (err) {
             res.sendStatus(403);
         }
+
+        const hostid = 5;
+        const sDate = req.query.sDate;
+        const eDate = req.query.eDate;
+        const rating = req.query.rating;
+        var userData;
+        //const { selectPlace } = req.body;
+        console.log(sDate);
+        console.log(eDate);
+        //   console.log(selectPlace);
+        console.log(rating);
+
+
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/reportTemplate.html'), 'utf-8');
-        const filename = Math.random() + '.pdf';
+        const filename = "kp@gmail.com" + '.pdf';
 
         const document = {
             html: html,
-            data: {},
+            data: {
+                name: "Karma Patel", ph: "6352411412", email: "kp@gmail.com", date: new Date().toISOString().slice(0, 10), clients: [{
+                    name: "fdsf",
+                    booking_date: "2022-25-26",
+                    place: "Anand",
+                    service: [{ sname: "Gymm" }, { sname: "park" }],
+                    ratting: "5.0",
+                    price: "15000",
+
+                }, {
+                    name: "fdxcxcsf",
+                    booking_date: "2022-25-26",
+                    place: "Anand",
+                    service: [{ sname: "Gym" }],
+                    ratting: "5.0",
+                    price: "15000",
+
+                },]
+            },
             path: './docs/' + filename
         }
+
+
+
         pdf.create(document, {
             formate: 'A4',
             orientation: 'portrait',
