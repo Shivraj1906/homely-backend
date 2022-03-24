@@ -142,7 +142,7 @@
 			color: #ffffff;
 		}
 		section .details .client {
-			width: 20%;
+			width: 30%;
 			line-height: 16px;
 			font-size: 16px;
 		}
@@ -151,7 +151,7 @@
 			font-weight: 600;
 		}
 		section .details .data {
-			width: 50%;
+			width: 40%;
 			text-align: right;
 		}
 		section .details .title {
@@ -274,7 +274,7 @@
 			background-color: #2A8EAC;
 			color: white;
 			font-weight: 400;
-			text-align: right;
+			text-align: center;
 		}
 		section table.grand-total tbody td.no, section table.grand-total tbody td.desc, section table.grand-total tbody td.qty {
 			background-color: transparent;
@@ -342,14 +342,14 @@
 			<div class="client left ">
 				<p style="margin-bottom: 7px;" >INVOICE FROM:</p>
 				<p class="name" style="margin-bottom: 4px;">{{this.fname}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">>{{this.fph}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.femail}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.fph}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;text-overflow: ellipsis;width: 50px;">{{this.femail}}</p>
 			</div>
 		  <div class="client left " >
 				<p  style="margin-bottom: 7px;">INVOICE TO:</p>
 				<p class="name" style="margin-bottom: 4px;">{{this.tname}}</p>
 				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.tph}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.temail}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;"">{{this.temail}}</p>
 					
       </div>
 		  <div class="data right">
@@ -406,20 +406,20 @@
 						<tr>
 							<th  class="no"></th>
 							<th  class="desc"><div>Description</div></th>
-							<th  class="qty"><div>Days</div></th>
+				
 							<th class="qty"><div>Price</div></th>
 						</tr>
 					</tbody>
 				
 					<tbody class="body">
-						{{#each this.iData}}
+						{{#each this.sdata}}
 						<tr>
 							<td class="no">{{getIndex @index}}</td>
-							<td class="desc">{{this.desc}}</td>
-							<td class="qty">{{this.days}}</td>
-							<td class="qty">&#8377; {{this.price}}</td>
+							<td class="desc">{{this.sname}}</td>
+							
+							<td class="qty">&#8377; {{this.sprice}}</td>
 						</tr>
-						{{totalInvoice this.price }}
+						 {{totalInvoice this.sprice }}
 						{{/each}}
 						
 					</tbody>
@@ -433,8 +433,8 @@
 							<td class="no"></td>
 							<td class="desc"></td>
 							<td class="qty"></td>
-							<td class="unit" style="fontsize: 16px"><strong>GRAND TOTAL</strong></td>
-							<td class="total" style="font-size: 16px;text-align: right;">	<strong>&#8377; {{totalInvoice -1 }}</strong></td>
+							<td class="unit" style="font-size: 16px"><strong>GRAND TOTAL</strong></td>
+							<td class="total" style="font-size: 16px;">	<strong>&#8377; {{totalInvoice -1 }}</strong></td>
 						</tr>
 						
 					</tbody>

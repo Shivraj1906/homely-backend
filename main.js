@@ -66,7 +66,7 @@ const profileUpload = multer({ storage: profileStorage });
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'p@ssword',
+    password: '',
     database: 'project'
 });
 
@@ -457,6 +457,7 @@ app.post('/chosenServices', verifyToken, (req, res) => {
 
         //loop through the service_ids and insert into 'chosen_services' table
         for (var i = 0; i < arr.length; i++) {
+            console.log(arr[i]);
             db.query("INSERT INTO service_chosen (booking_id, service_id) VALUES (?, ?)", [booking_id, arr[i]], (err, results) => {
                 if (err) {
                     //log error and send back 500 server error
@@ -505,6 +506,41 @@ app.get('/getBookingData', verifyToken, (req, res) => {
     });
 });
 
+
+//manage get request that returns Confirm booking data
+app.get('/getConfirmBookingData', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get email from authData
+        const email = authData.email;
+
+        //get user_id from email
+        db.query('SELECT user_id FROM users WHERE email = ?', [email], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //return booking data where traveler_id = user_id
+            db.query('SELECT * FROM booking WHERE traveler_id = ? AND   status = ?', [results[0].user_id, 'c'], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                //send back booking data and 200 okay request
+                res.status(200).json(results);
+            });
+        });
+    });
+});
+
 //manage get place data
 app.get('/getPlaceData', verifyToken, (req, res) => {
     //verify token
@@ -524,7 +560,7 @@ app.get('/getPlaceData', verifyToken, (req, res) => {
                 console.log(err);
                 return res.status(500).send('Internal Server Error');
             }
- 
+
             //send back place data and 200 okay request
             res.status(200).json(results[0]);
         });
@@ -589,22 +625,35 @@ app.get('/invoice', verifyToken, (req, res) => {
         if (err) {
             res.sendStatus(403);
         }
-        const html = fs.readFileSync(path.join(__dirname, '../auth/views/invoiceTemplate.html'), 'utf-8');
-        const filename = Math.random() + '.pdf';
 
+        const tid = req.query.tid;
+        const inum = req.query.inum;
+        const doi = req.query.doi;
+        const placeName = req.query.placeName;
+        const type = req.query.type;
+        const cin = req.query.cin;
+        const cout = req.query.cout;
+        const nps = req.query.nps;
+        const tname = req.query.tname;
+        const temail = req.query.temail;
+        const tph = req.query.tph;
+        const fname = req.query.fname;
+        const femail = req.query.femail;
+        const fph = req.query.fph;
+        const sname = req.query.sname;
+        const sprice = req.query.sprice;
+    
+            
+     
+
+        const html = fs.readFileSync(path.join(__dirname, '../auth/views/invoiceTemplate.html'), 'utf-8');
+        const filename = inum + '.pdf';
+      
         const document = {
             html: html,
             data: {
-                in: "A001", tid: "s3435564534534", doi: "2020-30-30",
-                placeName: "Van-vagdo", type: "Farm-House", cin: "2020-30-30", cout: "2020-30-30", nps: "6", iData: [{
-                    desc: "Rent",
-                    days: "5",
-                    price: "5000"
-                }, {
-                    desc: "Bike",
-                    days: "4",
-                    price: "500"
-                },], tname: "ds", tph: "6352411412", temail: "dx@gmail.com", fname: "ds", fph: "6352411412", femail: "dx@gmail.com"
+                in: inum, tid: tid, doi: doi,
+                placeName: placeName, type: type, cin: cin, cout: cout, nps: nps, tname: tname, tph: tph, temail: temail, fname: fname, fph: fph, femail: femail, sdata:[{sname:"Rent",sprice:"1500"},{sname:"Bike",sprice:"1500"}]
             },
             path: './docs/' + filename
         }
@@ -830,6 +879,51 @@ app.post('/updateProvidedService', verifyToken, (req, res) => {
         });
     });
 });
+
+//manage post request to update provided service data
+app.post('/updateBookedPlace', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        const { booking_id, guest_count, check_in, check_out, booking_date, total_bill } = req.body;
+        console.log(booking_id);
+        db.query('UPDATE booking SET guest_count = ?, check_in = ?, check_out = ?, booking_date = ?, total_bill = ? where booking_id = ?', [guest_count, check_in, check_out, booking_date, total_bill, booking_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            db.query('DELETE FROM service_chosen WHERE  booking_id = ?', [booking_id], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                // for (let i = 0; i < serviceIds.length; i++) {
+                //     db.query('INSERT INTO service_provided (place_id, service_id, price, average_star) VALUES (?, ?, ?, ? )', [place_id, serviceIds[i], servicePrice[i], average_star], (err, results) => {
+                //         if (err) {
+                //             //log error and send back 500 server error
+                //             console.log(err);
+                //             return res.status(500).send('Internal Server Error');
+                //         }
+                //     });
+                // }
+
+                //send back 200 okay request
+                res.status(200).send();
+            });
+
+        });
+
+
+    });
+});
+
 
 //manage get request to get booking data
 app.get('/getPendingBooking', verifyToken, (req, res) => {
