@@ -959,5 +959,30 @@ app.get('/getPendingBooking', verifyToken, (req, res) => {
     });
 });
 
+//manage post request to update booking status
+app.post('/updateBookingStatus', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get booking_id and status from request
+        const { booking_id, status } = req.body;
+
+        //update status into 'booking' table where booking_id = booking_id
+        db.query('UPDATE booking SET status = ? WHERE booking_id = ?', [status, booking_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back 200 okay request
+            res.status(200).send();
+        });
+    });
+});
+
 //listen at port 5000
 app.listen(5000, () => console.log('Server started at port 5000'));
