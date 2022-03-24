@@ -7,6 +7,7 @@ const pdf = require('pdf-creator-node');
 const fs = require('fs');
 const multer = require('multer');
 const app = express();
+const date = require('date-and-time')
 
 totalInvoice = 0;
 totalAmount = 0;
@@ -17,6 +18,7 @@ app.use(express.json());
 app.set('views', __dirname + '/views/');
 app.set('view engine', 'handlebars');
 var hbs = require('handlebars');
+const { constants } = require('os');
 
 hbs.registerHelper("getIndex", function (value) {
     return parseInt(value) + 1;
@@ -111,6 +113,7 @@ app.get('/getUserData', verifyToken, (req, res) => {
 
             //send back user data
             res.status(200).json({
+                user_id: results[0].user_id,
                 email: results[0].email,
                 first_name: results[0].first_name,
                 last_name: results[0].last_name,
@@ -196,8 +199,10 @@ app.get('/getHomeData', verifyToken, (req, res) => {
         }
 
         const email = authData.email;
+        const uid = req.query.uid;
         //get the place data from 'place' table
-        db.query('SELECT * FROM place WHERE is_listed = 1', (err, results) => {
+        console.log(uid);
+        db.query('SELECT * FROM place WHERE is_listed = 1 AND host_id != ?', [uid], (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
@@ -492,7 +497,7 @@ app.get('/getBookingData', verifyToken, (req, res) => {
             }
 
             //return booking data where traveler_id = user_id
-            db.query('SELECT * FROM booking WHERE traveler_id = ?', [results[0].user_id], (err, results) => {
+            db.query('SELECT * FROM booking WHERE traveler_id = ? AND (status = ? or status = ? or status = ?)', [results[0].user_id, "c", "p", "r"], (err, results) => {
                 if (err) {
                     //log error and send back 500 server error
                     console.log(err);
@@ -527,7 +532,7 @@ app.get('/getConfirmBookingData', verifyToken, (req, res) => {
             }
 
             //return booking data where traveler_id = user_id
-            db.query('SELECT * FROM booking WHERE traveler_id = ? AND   status = ?', [results[0].user_id, 'c'], (err, results) => {
+            db.query('SELECT * FROM booking WHERE traveler_id = ? AND status = ?', [results[0].user_id, 'z'], (err, results) => {
                 if (err) {
                     //log error and send back 500 server error
                     console.log(err);
@@ -642,18 +647,22 @@ app.get('/invoice', verifyToken, (req, res) => {
         const fph = req.query.fph;
         const sname = req.query.sname;
         const sprice = req.query.sprice;
-    
-            
-     
 
+        var data = [];
+
+        for (var i = 0; i < sname.length; i++) {
+            data.push({ 'sname': sname[i], 'sprice': sprice[i] });
+        }
+
+        console.log(data);
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/invoiceTemplate.html'), 'utf-8');
         const filename = inum + '.pdf';
-      
+
         const document = {
             html: html,
             data: {
                 in: inum, tid: tid, doi: doi,
-                placeName: placeName, type: type, cin: cin, cout: cout, nps: nps, tname: tname, tph: tph, temail: temail, fname: fname, fph: fph, femail: femail, sdata:[{sname:"Rent",sprice:"1500"},{sname:"Bike",sprice:"1500"}]
+                placeName: placeName, type: type, cin: cin, cout: cout, nps: nps, tname: tname, tph: tph, temail: temail, fname: fname, fph: fph, femail: femail, sdata: data,
             },
             path: './docs/' + filename
         }
@@ -676,63 +685,119 @@ app.get('/report', verifyToken, (req, res) => {
 
     totalAmount = 0;
     //verify token
-    jwt.verify(req.token, 'secret', (err, authData) => {
+    jwt.verify(req.token, 'secret', async (err, authData) => {
         if (err) {
             res.sendStatus(403);
         }
 
-        const hostid = 5;
+        
+        const hostid = req.query.hostid;
         const sDate = req.query.sDate;
         const eDate = req.query.eDate;
         const rating = req.query.rating;
         var userData;
-        //const { selectPlace } = req.body;
-        console.log(sDate);
-        console.log(eDate);
-        //   console.log(selectPlace);
-        console.log(rating);
 
+        var hname = "";
+        var hemail = "";
+        var hph = "";
+        var filename = "";
 
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/reportTemplate.html'), 'utf-8');
-        const filename = "kp@gmail.com" + '.pdf';
-
-        const document = {
-            html: html,
-            data: {
-                name: "Karma Patel", ph: "6352411412", email: "kp@gmail.com", date: new Date().toISOString().slice(0, 10), clients: [{
-                    name: "fdsf",
-                    booking_date: "2022-25-26",
-                    place: "Anand",
-                    service: [{ sname: "Gymm" }, { sname: "park" }],
-                    ratting: "5.0",
-                    price: "15000",
-
-                }, {
-                    name: "fdxcxcsf",
-                    booking_date: "2022-25-26",
-                    place: "Anand",
-                    service: [{ sname: "Gym" }],
-                    ratting: "5.0",
-                    price: "15000",
-
-                },]
-            },
-            path: './docs/' + filename
-        }
 
 
+        var data = [];
+        db.query('SELECT * FROM users where user_id =?', [hostid], async (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
 
-        pdf.create(document, {
-            formate: 'A4',
-            orientation: 'portrait',
-        })
-            .then(respo => {
-                res.status(200).send(filename);
+            hname = results[0].first_name + " " + results[0].last_name;
+            hph = results[0].phone_number;
+            hemail = results[0].email;
+            filename = hemail + ".pdf";
 
-            }).catch(error => {
-                console.log(error);
-                res.sendStatus(403);
+
+            db.query("SELECT * FROM booking WHERE status = ? AND place_id IN (SELECT place_id FROM place WHERE host_id = ?)", ['z', hostid], async (err, booking) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                // console.log(booking);
+                for (var i = 0; i < booking.length; i++) {
+
+                    var map = {};
+
+                    map['booking_date'] = date.format(booking[i].booking_date, 'YYYY-MM-DD');
+                    map['price'] = booking[i].total_bill;
+
+                    db.query("SELECT  first_name,last_name from users where user_id = ?", [booking[i].traveler_id], async (err, users) => {
+                        if (err) {
+                            //log error and send back 500 server error
+                            console.log(err);
+                            return res.status(500).send('Internal Server Error');
+                        }
+
+                        map['name'] = users[0]['first_name'] + " " + users[0]['last_name'];
+
+
+
+                    });
+
+                    db.query("SELECT name from place where place_id  = ?", [booking[i].place_id], async (err, place) => {
+                        if (err) {
+                            //log error and send back 500 server error
+                            console.log(err);
+                            return res.status(500).send('Internal Server Error');
+                        }
+                        map['place'] = place[0]['name'];
+                    });
+
+                    db.query('SELECT service_name FROM service WHERE service_id IN (SELECT service_id FROM service_chosen WHERE booking_id = ?)', [booking[i].booking_id], async (err, service) => {
+                        if (err) {
+                            //log error and send back 500 server error
+                            console.log(err);
+                            return res.status(500).send('Internal Server Error');
+                        }
+                        var arr = [];
+                        for (var i = 0; i < service.length; i++) {
+                            arr.push(service[i]['service_name']);
+                        }
+
+
+                        map['service'] = arr;
+                        map['ratting'] = "5.0";
+                        data.push(map);
+
+                        console.log(data);
+
+
+                        const document = {
+                            html: html,
+                            data: {
+                                name: hname, ph: hph, email: hemail, date: new Date().toISOString().slice(0, 10), clients: data
+                            },
+                            path: './docs/' + filename
+                        }
+
+                        pdf.create(document, {
+                            formate: 'A4',
+                            orientation: 'portrait',
+                        })
+                            .then(respo => {
+                                res.status(200).send();
+
+                            }).catch(error => {
+                                console.log(error);
+                                res.sendStatus(403);
+                            });
+                    });
+                }
             });
+        });
     });
 });
 
@@ -972,6 +1037,33 @@ app.post('/updateBookingStatus', verifyToken, (req, res) => {
 
         //update status into 'booking' table where booking_id = booking_id
         db.query('UPDATE booking SET status = ? WHERE booking_id = ?', [status, booking_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back 200 okay request
+            res.status(200).send();
+        });
+    });
+});
+
+//manage post request to update booking status
+app.post('/updatePayment', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get booking_id and status from request
+        const booking_id = req.body.booking_id;
+        const status = req.body.status;
+        const tid = req.body.tid;
+
+        //update status into 'booking' table where booking_id = booking_id
+        db.query('UPDATE booking SET status = ?, tid = ? WHERE booking_id = ?', [status, tid, booking_id], (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);

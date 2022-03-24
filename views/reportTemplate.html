@@ -470,7 +470,7 @@
 	<header class="clearfix">
 		<div class="container" style="		margin-top: 10px;">
 			<figure>
-				<img class="logo" src="http://192.168.207.29:5000/docs/logo.jpg" alt="">
+				<img class="logo" src="http://localhost:5000/docs/logo.jpg" alt="">
 			</figure>
 			<div class="company-info">
 				<h2 class="title">Homely</h2>
@@ -536,13 +536,13 @@
 							<td class="place">
 								<ul>
 									{{#each this.service}}
-									<li>{{this.sname}}</li>
+									<li>{{.}}</li>
 									{{/each}}
 
 								</ul>
 							</td>
 							<td class="rating">{{this.ratting}}</td>
-							<td class="total">{{this.price}}</td>
+							<td class="total">&#8377; {{this.price}}</td>
 						</tr>
 							{{totalAmount this.price}}
 						{{/each}}
