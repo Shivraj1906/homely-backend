@@ -340,16 +340,18 @@
 		<div class="details clearfix">
 		
 			<div class="client left ">
-				<p style="margin-bottom: 7px;" >INVOICE FROM:</p>
-				<p class="name" style="margin-bottom: 4px;">{{this.fname}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.fph}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;text-overflow: ellipsis;width: 50px;">{{this.femail}}</p>
-			</div>
+				<p style="margin-bottom: 7px;font-size: 16px;" >INVOICE FROM:</p>
+				<p class="name" style="margin-bottom: 4px;font-size: 16px;">{{this.tname}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;font-size: 16px;">{{this.tph}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;font-size: 16px;">{{this.temail}}</p>
+
+				</div>
 		  <div class="client left " >
-				<p  style="margin-bottom: 7px;">INVOICE TO:</p>
-				<p class="name" style="margin-bottom: 4px;">{{this.tname}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.tph}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;"">{{this.temail}}</p>
+				<p  style="margin-bottom: 7px;font-size: 16px;">INVOICE TO:</p>
+				<p class="name" style="margin-bottom: 4px;font-size: 16px;">{{this.fname}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;font-size: 16px;">{{this.fph}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400;text-overflow: ellipsis;width: 50px;font-size: 16px;">{{this.femail}}</p>
+		
 					
       </div>
 		  <div class="data right">
@@ -373,29 +375,29 @@
 					</tbody>
 					<tbody class="body">
 						<tr>
-							<td class="no">1</td>
-							<td class="desc">Place Name</td>
-							<td class="qty">{{this.placeName}}</td>
+							<td class="no"style="font-size: 16px;">1</td>
+							<td class="desc"style="font-size: 16px;">Place Name</td>
+							<td class="qty"style="font-size: 16px;">{{this.placeName}}</td>
 						</tr>
 						<tr>
-							<td class="no">2</td>
-							<td class="desc">Type</td>
-							<td class="qty">{{this.type}}</td>
+							<td class="no"style="font-size: 16px;">2</td>
+							<td class="desc"style="font-size: 16px;">Type</td>
+							<td class="qty"style="font-size: 16px;">{{this.type}}</td>
 						</tr>
 						<tr>
-							<td class="no">3</td>
-							<td class="desc">Check-In Date</td>
-							<td class="qty">{{this.cin}}</td>
+							<td class="no"style="font-size: 16px;">3</td>
+							<td class="desc"style="font-size: 16px;">Check-In Date</td>
+							<td class="qty"style="font-size: 16px;">{{this.cin}}</td>
 						</tr>
 						<tr>
-							<td class="no">4</td>
-							<td class="desc">Check-Out Date</td>
-							<td class="qty">{{this.cout}}</td>
+							<td class="no"style="font-size: 16px;">4</td>
+							<td class="desc"style="font-size: 16px;">Check-Out Date</td>
+							<td class="qty"style="font-size: 16px;">{{this.cout}}</td>
 						</tr>
 						<tr>
-							<td class="no">5</td>
-							<td class="desc">Number of Persons</td>
-							<td class="qty">{{this.nps}}</td>
+							<td class="no"style="font-size: 16px;">5</td>
+							<td class="desc" style="font-size: 16px;">Number of Persons</td>
+							<td class="qty"style="font-size: 16px;">{{this.nps}}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -404,7 +406,7 @@
 				<table>
 					<tbody class="head">
 						<tr>
-							<th  class="no"></th>
+							<th  class="no" ></th>
 							<th  class="desc"><div>Description</div></th>
 				
 							<th class="qty"><div>Price</div></th>
@@ -414,10 +416,10 @@
 					<tbody class="body">
 						{{#each this.sdata}}
 						<tr>
-							<td class="no">{{getIndex @index}}</td>
-							<td class="desc">{{this.sname}}</td>
+							<td class="no"style="font-size: 16px;">{{getIndex @index}}</td>
+							<td class="desc"style="font-size: 16px;">{{this.sname}}</td>
 							
-							<td class="qty">&#8377; {{this.sprice}}</td>
+							<td class="qty" style="font-size: 16px;">&#8377; {{this.sprice}}</td>
 						</tr>
 						 {{totalInvoice this.sprice }}
 						{{/each}}

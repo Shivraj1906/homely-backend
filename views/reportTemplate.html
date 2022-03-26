@@ -248,7 +248,7 @@
 		section .details .client {
 			width: 20%;
 			line-height: 16px;
-			font-size: 16px;
+			font-size: 20px;
 		}
 
 		section .details .client .name {
@@ -354,7 +354,7 @@
 			padding: 0px;
 			background-color: #2A8EAC;
 			color: #ffffff;
-			font-size: 1.66666666666667em;
+			font-size: 16px;
 			font-weight: 600;
 			line-height: 50px;
 		}
@@ -386,7 +386,7 @@
 		}
 
 		section table tbody.body tr.total .total {
-			font-size: 1.18181818181818em;
+			
 			font-weight: 600;
 			color: #2A8EAC;
 		}
@@ -414,6 +414,7 @@
 		section table.grand-total tbody td.desc,
 		section table.grand-total tbody td.place {
 			background-color: transparent;
+		
 		}
 
 		section table.grand-total tbody td.total,
@@ -484,10 +485,10 @@
 		<div class="details clearfix">
 
 			<div class="client left ">
-				<p style="margin-bottom: 7px;">OWNER:</p>
-				<p class="name" style="margin-bottom: 4px;">{{this.name}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.ph}}</p>
-				<p class="name" style="margin-bottom: 4px;font-weight: 400;">{{this.email}}</p>
+				<p style="margin-bottom: 7px; font-size: 16px;">OWNER:</p>
+				<p class="name" style="margin-bottom: 4px; font-size: 16px;">{{this.name}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400; font-size: 16px;">{{this.ph}}</p>
+				<p class="name" style="margin-bottom: 4px;font-weight: 400; font-size: 16px;">{{this.email}}</p>
 			</div>
 			<div class="data right">
 				<div class="title">Report </div>
@@ -530,10 +531,10 @@
 						<tr>
 							<td class="no">{{getIndex @index}}</script>
 							</td>
-							<td class="desc">{{this.name}}</td>
-							<td class="place">{{this.booking_date}}</td>
-							<td class="place">{{this.place}}</td>
-							<td class="place">
+							<td class="desc" style="font-size: 16px;">{{this.name}}</td>
+							<td class="place"  style="font-size: 16px;">{{this.booking_date}}</td>
+							<td class="place"  style="font-size: 16px;">{{this.place}}</td>
+							<td class="place"  style="font-size: 16px;">
 								<ul>
 									{{#each this.service}}
 									<li>{{.}}</li>
@@ -541,8 +542,8 @@
 
 								</ul>
 							</td>
-							<td class="rating">{{this.ratting}}</td>
-							<td class="total">&#8377; {{this.price}}</td>
+							<td class="rating" style="font-size: 16px;">{{this.ratting}}</td>
+							<td class="total" style="font-size: 16px;">&#8377; {{this.price}}</td>
 						</tr>
 							{{totalAmount this.price}}
 						{{/each}}

@@ -19,6 +19,7 @@ app.set('views', __dirname + '/views/');
 app.set('view engine', 'handlebars');
 var hbs = require('handlebars');
 const { constants } = require('os');
+const { DOUBLE } = require('mysql/lib/protocol/constants/types');
 
 hbs.registerHelper("getIndex", function (value) {
     return parseInt(value) + 1;
@@ -208,7 +209,7 @@ app.get('/getHomeData', verifyToken, (req, res) => {
                 console.log(err);
                 return res.status(500).send('Internal Server Error');
             }
-
+            console.log(results);
             //send back results
             res.status(200).json(results);
         });
@@ -299,6 +300,32 @@ app.get('/getChosenService', verifyToken, (req, res) => {
 
         //get all services from 'service' table which is in service_provided table where booking_id = booking_id
         db.query('SELECT * FROM service WHERE service_id IN (SELECT service_id FROM service_chosen WHERE booking_id = ?)', [booking_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back results
+            res.status(200).json(results);
+        });
+    });
+});
+
+
+//manage get request that returns chosen service for given booking
+app.get('/getChosenServicePrice', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get booking_id from query params
+        const booking_id = req.query.booking_id;
+
+        //get all services from 'service' table which is in service_provided table where booking_id = booking_id
+        db.query('SELECT service_name,price FROM service,service_provided WHERE service.service_id = service_provided.service_id AND  place_id IN (SELECT place_id FROM service_chosen WHERE booking_id = ?);', [booking_id], (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
@@ -532,7 +559,7 @@ app.get('/getConfirmBookingData', verifyToken, (req, res) => {
             }
 
             //return booking data where traveler_id = user_id
-            db.query('SELECT * FROM booking WHERE traveler_id = ? AND status = ?', [results[0].user_id, 'z'], (err, results) => {
+            db.query('SELECT * FROM booking WHERE traveler_id = ? AND status = ?  ORDER BY booking_id DESC', [results[0].user_id, 'z'], (err, results) => {
                 if (err) {
                     //log error and send back 500 server error
                     console.log(err);
@@ -650,19 +677,23 @@ app.get('/invoice', verifyToken, (req, res) => {
 
         var data = [];
 
-        for (var i = 0; i < sname.length; i++) {
+
+        for (var i = 1; i < sname.length; i++) {
             data.push({ 'sname': sname[i], 'sprice': sprice[i] });
         }
+
+
 
         console.log(data);
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/invoiceTemplate.html'), 'utf-8');
         const filename = inum + '.pdf';
-
+        console.log(filename);
         const document = {
             html: html,
             data: {
                 in: inum, tid: tid, doi: doi,
-                placeName: placeName, type: type, cin: cin, cout: cout, nps: nps, tname: tname, tph: tph, temail: temail, fname: fname, fph: fph, femail: femail, sdata: data,
+                placeName: placeName, type: type, cin: cin, cout: cout, nps: nps, tname: tname, tph: tph, temail: temail,
+                fname: fname, fph: fph, femail: femail, sdata: data,
             },
             path: './docs/' + filename
         }
@@ -671,6 +702,7 @@ app.get('/invoice', verifyToken, (req, res) => {
             orientation: 'portrait',
         })
             .then(respo => {
+                console.log(filename);
                 res.status(200).send(filename);
 
             }).catch(error => {
@@ -690,11 +722,12 @@ app.get('/report', verifyToken, (req, res) => {
             res.sendStatus(403);
         }
 
-        
-        const hostid = req.query.hostid;
+        var selectPlace = [];
+        const email = authData.email;
         const sDate = req.query.sDate;
         const eDate = req.query.eDate;
         const rating = req.query.rating;
+        selectPlace = req.query.selectPlace;
         var userData;
 
         var hname = "";
@@ -702,11 +735,12 @@ app.get('/report', verifyToken, (req, res) => {
         var hph = "";
         var filename = "";
 
+        console.log( selectPlace);
         const html = fs.readFileSync(path.join(__dirname, '../auth/views/reportTemplate.html'), 'utf-8');
 
 
-        var data = [];
-        db.query('SELECT * FROM users where user_id =?', [hostid], async (err, results) => {
+        global.data = [];
+        db.query('SELECT * FROM users where email =?', [email], async (err, results) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
@@ -716,19 +750,23 @@ app.get('/report', verifyToken, (req, res) => {
             hname = results[0].first_name + " " + results[0].last_name;
             hph = results[0].phone_number;
             hemail = results[0].email;
+
             filename = hemail + ".pdf";
 
 
-            db.query("SELECT * FROM booking WHERE status = ? AND place_id IN (SELECT place_id FROM place WHERE host_id = ?)", ['z', hostid], async (err, booking) => {
+            db.query("SELECT * FROM booking WHERE status = ? AND place_id IN (SELECT place_id FROM place WHERE host_id = ?) ", ['z', results[0].user_id ], async (err, booking) => {
                 if (err) {
                     //log error and send back 500 server error
                     console.log(err);
                     return res.status(500).send('Internal Server Error');
                 }
 
+                if (booking.length == 0) {
+                    return res.status(200).send('No Data !!');
+                }
                 // console.log(booking);
                 for (var i = 0; i < booking.length; i++) {
-
+                  
                     var map = {};
 
                     map['booking_date'] = date.format(booking[i].booking_date, 'YYYY-MM-DD');
@@ -756,6 +794,22 @@ app.get('/report', verifyToken, (req, res) => {
                         map['place'] = place[0]['name'];
                     });
 
+                    db.query("SELECT * from place_review WHERE booking_id = ? AND place_id = ? ", [booking[i].booking_id, booking[i].place_id], (err, star) => {
+                        if (err) {
+                            //log error and send back 500 server error
+                            console.log(err);
+                            return res.status(500).send('Internal Server Error');
+                        }
+
+                        if (star.length != 0) {
+                            map['ratting'] = star[0].star_count + "";
+                        }
+                        else{
+                            map['ratting'] =  "---";
+                        }
+
+                    });
+
                     db.query('SELECT service_name FROM service WHERE service_id IN (SELECT service_id FROM service_chosen WHERE booking_id = ?)', [booking[i].booking_id], async (err, service) => {
                         if (err) {
                             //log error and send back 500 server error
@@ -763,39 +817,62 @@ app.get('/report', verifyToken, (req, res) => {
                             return res.status(500).send('Internal Server Error');
                         }
                         var arr = [];
+                        if(service.length == 0){
+                            arr.push('---');
+                        }
                         for (var i = 0; i < service.length; i++) {
                             arr.push(service[i]['service_name']);
                         }
-
-
                         map['service'] = arr;
-                        map['ratting'] = "5.0";
                         data.push(map);
-
                         console.log(data);
+                        
+                        if (data.length == booking.length) {
+                      
+                            console.log(sDate);
+                            console.log(eDate);
 
+                            if(sDate != "" && eDate != "" && selectPlace !=[] ){
+                                data = data.filter(function(item)
+                                {
+                                    return (selectPlace.includes(item['place'])) && (rating <= item['ratting']) && ( sDate <= item['booking_date']  &&  eDate >= item['booking_date']);
+                                })
+                            }
+                         
 
-                        const document = {
-                            html: html,
-                            data: {
-                                name: hname, ph: hph, email: hemail, date: new Date().toISOString().slice(0, 10), clients: data
-                            },
-                            path: './docs/' + filename
+                            console.log(data);
+                            if(data.length != 0){
+                                totalAmount = 0;
+                                const document = {
+                                    html: html,
+                                    data: {
+                                        name: hname, ph: hph, email: hemail, date: new Date().toISOString().slice(0, 10), clients: data
+                                    },
+                                    path: './docs/' + filename
+                                }
+    
+                                pdf.create(document, {
+                                    formate: 'A4',
+                                    orientation: 'portrait',
+                                })
+                                    .then(respo => {
+                                        res.status(200).send(filename);
+    
+                                    }).catch(error => {
+                                        console.log(error);
+                                        res.sendStatus(403);
+                                    });
+                            }else {
+                                return res.status(200).send('No Data !!');
+                            }
+                          
                         }
 
-                        pdf.create(document, {
-                            formate: 'A4',
-                            orientation: 'portrait',
-                        })
-                            .then(respo => {
-                                res.status(200).send();
 
-                            }).catch(error => {
-                                console.log(error);
-                                res.sendStatus(403);
-                            });
                     });
                 }
+
+
             });
         });
     });
@@ -885,8 +962,6 @@ app.post('/updatePlace', verifyToken, (req, res) => {
         if (err) {
             res.sendStatus(403);
         }
-
-
         //get place_id from request
         const { place_id } = req.body;
 
@@ -968,17 +1043,6 @@ app.post('/updateBookedPlace', verifyToken, (req, res) => {
                     console.log(err);
                     return res.status(500).send('Internal Server Error');
                 }
-
-                // for (let i = 0; i < serviceIds.length; i++) {
-                //     db.query('INSERT INTO service_provided (place_id, service_id, price, average_star) VALUES (?, ?, ?, ? )', [place_id, serviceIds[i], servicePrice[i], average_star], (err, results) => {
-                //         if (err) {
-                //             //log error and send back 500 server error
-                //             console.log(err);
-                //             return res.status(500).send('Internal Server Error');
-                //         }
-                //     });
-                // }
-
                 //send back 200 okay request
                 res.status(200).send();
             });
@@ -1008,9 +1072,9 @@ app.get('/getPendingBooking', verifyToken, (req, res) => {
                 console.log(err);
                 return res.status(500).send('Internal Server Error');
             }
-
+            console.log(results[0].user_id)
             //return data from 'booking' table where user_id = user_id and status = 'p'
-            db.query('SELECT * FROM booking WHERE traveler_id = ? AND status = ?', [results[0].user_id, 'p'], (err, results) => {
+            db.query('SELECT * FROM booking WHERE place_id IN (SELECT place_id FROM place WHERE host_id = ?) AND status = ?  ORDER BY booking_id DESC', [results[0].user_id, 'p'], (err, results) => {
                 if (err) {
                     //log error and send back 500 server error
                     console.log(err);
@@ -1069,12 +1133,80 @@ app.post('/updatePayment', verifyToken, (req, res) => {
                 console.log(err);
                 return res.status(500).send('Internal Server Error');
             }
-
             //send back 200 okay request
             res.status(200).send();
         });
     });
 });
+
+
+//mangage post request that manages place ratting
+app.post('/placeRatting', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        const booking_id = req.body.booking_id;
+        const place_id = req.body.place_id;
+        const star_count = req.body.star_count;
+
+        db.query("INSERT INTO place_review(booking_id, place_id,star_count) VALUES (?, ?, ?)", [booking_id, place_id, star_count], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            db.query("select avg(star_count) as avg_count from place_review where place_id = ?", [place_id], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                db.query("update place set average_star = ? where place_id = ?", [results[0]['avg_count'],place_id], (err, results) => {
+                    if (err) {
+                        //log error and send back 500 server error
+                        console.log(err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+                    //send back 200 okay request
+                    res.status(200).send();
+                });
+            });
+        });
+    });
+});
+
+//mangage get request that manages  place ratting
+app.get('/getPlaceReview', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+        const { booking_id, place_id } = req.query;
+        db.query("SELECT * from place_review WHERE booking_id = ? AND place_id = ?", [booking_id, place_id], (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+            console.log(results[0]);
+
+            if (results.length == 0) {
+                res.status(200).send("0");
+            }
+            else {
+                res.status(200).send(results[0].star_count + "");
+            }
+        });
+
+    });
+});
+
 
 //listen at port 5000
 app.listen(5000, () => console.log('Server started at port 5000'));
