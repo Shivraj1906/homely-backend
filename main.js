@@ -125,6 +125,7 @@ app.get('/getUserData', verifyToken, (req, res) => {
                 state: results[0].state,
                 pincode: results[0].pincode,
                 phone_number: results[0].phone_number,
+                token:results[0].token,
             });
         });
     });
@@ -160,6 +161,7 @@ app.get('/getUserDataWithId', verifyToken, (req, res) => {
                 state: results[0].state,
                 pincode: results[0].pincode,
                 phone_number: results[0].phone_number,
+                token: results[0].token
             });
         });
     });
