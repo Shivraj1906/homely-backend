@@ -71,7 +71,7 @@ app.get('/', verifyToken, (req, res) => {
 //manage /register post route
 app.post('/register', (req, res) => {
     //get first_name, last_name, email and password from request body
-    const { first_name, last_name, email, password, token } = req.body;
+    const { first_name, last_name, email, password, notificationToken } = req.body;
 
     //check if email is already in use
     sql.query('SELECT * FROM users WHERE email = ?', [email], (err, result) => {
@@ -91,7 +91,7 @@ app.post('/register', (req, res) => {
                 res.status(500).send('Internal server error');
             }
             //insert user into database
-            sql.query('INSERT INTO users (first_name, last_name, email, password, token) VALUES (?, ?, ?, ?, ?)', [first_name, last_name, email, hash, token], (err, result) => {
+            sql.query('INSERT INTO users (first_name, last_name, email, password, token) VALUES (?, ?, ?, ?, ?)', [first_name, last_name, email, hash, notificationToken], (err, result) => {
                 if (err) {
                     console.log(err);
                     res.status(500).send('Internal server error');
@@ -112,7 +112,7 @@ app.post("/profileUpload", upload.single("image"), (req, res) => {
 //manage /login post route
 app.post('/login', (req, res) => {
     //get email and password from the body
-    const { email, password } = req.body;
+    const { email, password, notificationToken } = req.body;
 
     //check if the email is in the database
     sql.query(`SELECT * FROM users WHERE email = '${email}'`, (err, result) => {
@@ -147,9 +147,14 @@ app.post('/login', (req, res) => {
             //create a token with user email and no expiration date
             const token = jwt.sign({ email }, 'secret');
             //return the token with ok status
-            res.status(200).json({
-                token
-            });
+
+            sql.query(`UPDATE users SET token = '${notificationToken}' WHERE email = '${email}'`, (err, result) => {
+                if (err) {
+                    return res.status(500).send("Server error")
+                }
+                res.status(200).json({token });
+            })
+
         });
     });
 });
