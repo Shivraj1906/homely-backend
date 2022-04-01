@@ -41,7 +41,6 @@ hbs.registerHelper("totalAmount", function (value) {
     }
 });
 
-
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
         callback(null, 'place')
@@ -51,7 +50,6 @@ const storage = multer.diskStorage({
         callback(null, file.originalname);
     }
 })
-
 
 const profileStorage = multer.diskStorage({
     destination: (req, file, callback) => {
@@ -177,20 +175,55 @@ app.post('/updateUserData', verifyToken, (req, res) => {
         //get email from authData
         const email = authData.email;
 
+
         //get newEmail, first_name, last_name, birthdate from request body
         const { newEmail, first_name, last_name, birthdate, gender, address, city, state, pincode, phone_number } = req.body;
 
-        //update the user data
-        db.query('UPDATE users SET email = ?, first_name = ?, last_name = ?, birthdate = ?, gender = ?, address = ?, city = ?, state = ?, pincode = ?, phone_number = ? WHERE email = ?', [newEmail, first_name, last_name, birthdate, gender, address, city, state, pincode, phone_number, email], (err, results) => {
+        db.query('SELECT * FROM users WHERE email = ?', [email], (err, userData) => {
             if (err) {
                 //log error and send back 500 server error
                 console.log(err);
                 return res.status(500).send('Internal Server Error');
             }
+            //update the user data
+            db.query('UPDATE users SET email = ?, first_name = ?, last_name = ?, birthdate = ?, gender = ?, address = ?, city = ?, state = ?, pincode = ?, phone_number = ? WHERE email = ?', [newEmail, first_name, last_name, birthdate, gender, address, city, state, pincode, phone_number, email], (err, results) => {
+                if (err) {
+                    //log error and send back 500 server error
+                    console.log(err);
+                    return res.status(500).send('Internal Server Error');
+                }
 
-            //send back 200 okay request
-            res.status(200).send('OK');
+                db.query('select not exists(select user_id  from host where user_id = ? ) AS ex', [userData[0].user_id], (err, result) => {
+                    if (err) {
+                        //log error and send back 500 server error
+                        console.log(err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+                    console.log(userData[0].user_id);
+                    console.log(result[0].ex);
+                    if (result[0].ex) {
+                        db.query('insert into host(user_id,is_listed,host_description) values(?,?,?)', [userData[0].user_id, '1', ''], (err, result) => {
+                            if (err) {
+                                //log error and send back 500 server error
+                                console.log(err);
+                                return res.status(500).send('Internal Server Error');
+                            }
+
+                            //send back 200 okay request
+                            res.status(200).send('OK');
+                        });
+                    } else {
+                        res.status(200).send('OK');
+                    }
+
+
+
+
+                });
+              
+            });
         });
+
     });
 });
 
@@ -313,7 +346,6 @@ app.get('/getChosenService', verifyToken, (req, res) => {
         });
     });
 });
-
 
 //manage get request that returns chosen service for given booking
 app.get('/getChosenServicePrice', verifyToken, (req, res) => {
@@ -540,7 +572,6 @@ app.get('/getBookingData', verifyToken, (req, res) => {
     });
 });
 
-
 //manage get request that returns Confirm booking data
 app.get('/getConfirmBookingData', verifyToken, (req, res) => {
     //verify token
@@ -711,6 +742,30 @@ app.get('/invoice', verifyToken, (req, res) => {
                 console.log(error);
                 res.sendStatus(403);
             });
+    });
+});
+
+
+
+app.get('/getUserFinalService', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+        //get place_id from query params
+        const booking_id = req.query.booking_id;
+        const placeId = req.query.placeId;
+
+        db.query('SELECT service_name,price FROM service,service_provided WHERE  (place_id = ? AND service_provided.service_id IN (SELECT service_id FROM service_chosen WHERE booking_id = ?)) AND (service.service_id IN (SELECT service_id FROM service_chosen WHERE booking_id = ?))',[placeId,booking_id,booking_id], async (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+            return res.status(200).send(results);
+        });
     });
 });
 
@@ -1066,7 +1121,6 @@ app.post('/updateBookedPlace', verifyToken, (req, res) => {
     });
 });
 
-
 //manage get request to get booking data
 app.get('/getPendingBooking', verifyToken, (req, res) => {
     //verify token
@@ -1152,7 +1206,6 @@ app.post('/updatePayment', verifyToken, (req, res) => {
     });
 });
 
-
 //mangage post request that manages place ratting
 app.post('/placeRatting', verifyToken, (req, res) => {
     //verify token
@@ -1219,7 +1272,6 @@ app.get('/getPlaceReview', verifyToken, (req, res) => {
 
     });
 });
-
 
 //listen at port 5000
 app.listen(5000, () => console.log('Server started at port 5000'));
