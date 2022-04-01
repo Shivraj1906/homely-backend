@@ -73,7 +73,7 @@ const profileUpload = multer({ storage: profileStorage });
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'p@ssword',
+    password: '',
     database: 'project'
 });
 
