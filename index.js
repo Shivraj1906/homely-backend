@@ -4,11 +4,17 @@ const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer')
+const cors = require('cors');
 const path = require('path')
 const nodemailer = require('nodemailer');
 
 //create a new express app
 const app = express();
+
+app.use(cors({
+    origin: '*',
+    optionsSuccessStatus: 200
+}));
 
 app.use(express.json());
 
@@ -28,7 +34,7 @@ const upload = multer({ storage: storage });
 const sql = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'p@ssword',
     database: 'project'
 });
 
@@ -152,7 +158,7 @@ app.post('/login', (req, res) => {
                 if (err) {
                     return res.status(500).send("Server error")
                 }
-                res.status(200).json({token });
+                res.status(200).json({ token });
             })
 
         });
