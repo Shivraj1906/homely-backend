@@ -7,10 +7,16 @@ const pdf = require('pdf-creator-node');
 const fs = require('fs');
 const multer = require('multer');
 const app = express();
+const cors = require('cors');
 const date = require('date-and-time')
 
 totalInvoice = 0;
 totalAmount = 0;
+
+app.use(cors({
+    origin: '*',
+    optionsSuccessStatus: 200
+}));
 
 app.use(express.static('public'));
 app.use('/docs', express.static('docs'))
@@ -67,7 +73,7 @@ const profileUpload = multer({ storage: profileStorage });
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'p@ssword',
     database: 'project'
 });
 
@@ -628,6 +634,29 @@ app.get('/getPlaceData', verifyToken, (req, res) => {
 
             //send back place data and 200 okay request
             res.status(200).json(results[0]);
+        });
+    });
+});
+
+//manage get place data
+app.get('/getAllPlaces', verifyToken, (req, res) => {
+    //verify token
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if (err) {
+            res.sendStatus(403);
+        }
+
+
+        //get place data where place_id = place_id
+        db.query('SELECT * FROM place', (err, results) => {
+            if (err) {
+                //log error and send back 500 server error
+                console.log(err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            //send back place data and 200 okay request
+            res.status(200).json(results);
         });
     });
 });
